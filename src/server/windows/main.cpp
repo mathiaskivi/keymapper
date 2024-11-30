@@ -294,17 +294,17 @@ namespace {
         WH_KEYBOARD_LL, &keyboard_hook_proc, g_instance, 0);
       if (!g_keyboard_hook)
         error("Hooking keyboard failed");
-    }
 
 #if !defined(NDEBUG)
-    // do not hook mouse while debugging
-    if (!IsDebuggerPresent())
+      // do not hook mouse while debugging
+      if (!IsDebuggerPresent())
 #endif
-    {
-      g_mouse_hook = SetWindowsHookExW(
-        WH_MOUSE_LL, &mouse_hook_proc, g_instance, 0);
-      if (!g_mouse_hook)
-        error("Hooking mouse failed");
+      {
+        g_mouse_hook = SetWindowsHookExW(
+          WH_MOUSE_LL, &mouse_hook_proc, g_instance, 0);
+        if (!g_mouse_hook)
+          error("Hooking mouse failed");
+      }
     }
   }
 
@@ -384,9 +384,11 @@ namespace {
       }
 
       case WM_APP_DEVICE_INPUT: {
+        const auto hiword = HIWORD(wparam);
         const auto event = KeyEvent{ 
-          static_cast<Key>(LOWORD(wparam)), 
-          static_cast<KeyState>(HIWORD(wparam)) 
+          static_cast<Key>(LOWORD(wparam)),
+          static_cast<KeyState>(hiword & 0x1F),
+          static_cast<KeyEvent::value_t>(hiword >> 5)
         };
         const auto device = reinterpret_cast<HANDLE>(lparam);
         const auto device_index = g_devices.get_device_index(device);
