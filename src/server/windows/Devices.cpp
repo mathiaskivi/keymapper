@@ -217,6 +217,24 @@ public:
     m_handle_with_hardware_ids.emplace_back(device, std::move(hardware_ids));
   }
 
+  void try_set_last_keyboard() {
+    for (auto keyboard = INTERCEPTION_MAX_KEYBOARD; keyboard > 0; keyboard--) {
+      if (!get_device_handle(keyboard))
+        continue;
+      m_last_keyboard = keyboard;
+      break;
+    }
+  }
+
+  void try_set_last_mouse() {
+    for (auto mouse = INTERCEPTION_MAX_DEVICE; mouse > INTERCEPTION_MAX_KEYBOARD; mouse--) {
+      if (!get_device_handle(mouse))
+        continue;
+      m_last_mouse = mouse;
+      break;
+    }
+  }
+
   void send_keyboard_input(const KeyEvent& event) {
     InterceptionStroke stroke;
     auto* keystroke = reinterpret_cast<InterceptionKeyStroke*>(&stroke);
@@ -393,8 +411,11 @@ void Devices::on_device_attached(HANDLE device) {
   verbose("Device '%s' attached", m_device_descs.back().name.c_str());
   apply_device_filters();
 
-  if (m_interception)
+  if (m_interception) {
     m_interception->set_device_hardware_ids(device, std::move(hardware_ids));
+    m_interception->try_set_last_keyboard();
+    m_interception->try_set_last_mouse();
+  }
 }
 
 void Devices::on_device_removed(HANDLE device) {
